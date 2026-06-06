@@ -36,7 +36,7 @@
     .tab-content.active { display: block; }
   </style>
 </head>
-<body class="bg-gray-50 text-gray-800 min-h-screen">
+<body class="bg-gray-50 text-gray-800 min-h-screen relative">
 
   <!-- Header -->
   <header class="bg-indigo-600 text-white shadow-md">
@@ -51,166 +51,186 @@
 
   <main class="max-w-6xl mx-auto px-4 py-8">
     
-    <!-- Navigation Tabs -->
-    <div class="flex space-x-1 bg-gray-200 p-1 rounded-xl mb-8">
-      <button id="tab-input-btn" onclick="switchTab('input')" class="flex-1 py-3 text-sm font-medium rounded-lg flex items-center justify-center gap-2 transition-colors bg-white shadow text-indigo-700">
-        <i data-lucide="file-text" class="w-5 h-5"></i>
-        지도안 입력
-      </button>
-      <button id="tab-digitized-btn" onclick="switchTab('digitized')" disabled class="flex-1 py-3 text-sm font-medium rounded-lg flex items-center justify-center gap-2 transition-colors text-gray-400 cursor-not-allowed">
-        <i data-lucide="target" class="w-5 h-5"></i>
-        디지털 변환 결과
-      </button>
-      <button id="tab-analysis-btn" onclick="switchTab('analysis')" disabled class="flex-1 py-3 text-sm font-medium rounded-lg flex items-center justify-center gap-2 transition-colors text-gray-400 cursor-not-allowed">
-        <i data-lucide="bar-chart" class="w-5 h-5"></i>
-        AI 심층 분석
-      </button>
+    <!-- API Key Input Section (초기 화면) -->
+    <div id="api-key-section" class="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 mb-8 animate-fadeIn max-w-2xl mx-auto text-center">
+      <div class="inline-flex items-center justify-center p-3 bg-indigo-100 rounded-full mb-4">
+        <i data-lucide="key" class="w-8 h-8 text-indigo-600"></i>
+      </div>
+      <h2 class="text-xl font-bold text-gray-900 mb-2">Gemini API 키 입력</h2>
+      <p class="text-gray-500 mb-6 text-sm">보안을 위해 API 키를 서버에 저장하지 않습니다.<br/>Google AI Studio에서 발급받은 키를 입력해 주세요.</p>
+      
+      <div class="flex flex-col sm:flex-row gap-3">
+        <input type="password" id="api-key-input" placeholder="AIzaSy... 또는 AQ... 형태의 키 입력" class="flex-1 p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-center sm:text-left">
+        <button onclick="saveApiKey()" class="px-6 py-3 bg-indigo-600 text-white font-medium rounded-xl hover:bg-indigo-700 transition shadow-sm whitespace-nowrap">
+          시작하기
+        </button>
+      </div>
+      <p id="api-key-error" class="text-red-500 text-sm mt-3 hidden">API 키를 입력해 주세요.</p>
     </div>
 
-    <!-- Tab Content: Input -->
-    <div id="tab-input" class="tab-content active bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sm:p-8 animate-fadeIn">
-      <div class="mb-6 flex justify-between items-end">
-        <div>
-          <h2 class="text-xl font-bold text-gray-900 mb-2">수업지도안 입력</h2>
-          <p class="text-gray-500">텍스트를 직접 입력하거나 PDF 파일을 업로드하여 AI 분석을 받아보세요.</p>
-        </div>
-        <button onclick="fillDemoData()" class="text-indigo-600 text-sm hover:underline flex items-center gap-1 font-medium">
-          <i data-lucide="play" class="w-4 h-4"></i> 데모 데이터 채우기
+    <!-- Main Content Area (키 입력 전에는 숨김) -->
+    <div id="main-content" class="hidden">
+      <!-- Navigation Tabs -->
+      <div class="flex space-x-1 bg-gray-200 p-1 rounded-xl mb-8">
+        <button id="tab-input-btn" onclick="switchTab('input')" class="flex-1 py-3 text-sm font-medium rounded-lg flex items-center justify-center gap-2 transition-colors bg-white shadow text-indigo-700">
+          <i data-lucide="file-text" class="w-5 h-5"></i>
+          지도안 입력
+        </button>
+        <button id="tab-digitized-btn" onclick="switchTab('digitized')" disabled class="flex-1 py-3 text-sm font-medium rounded-lg flex items-center justify-center gap-2 transition-colors text-gray-400 cursor-not-allowed">
+          <i data-lucide="target" class="w-5 h-5"></i>
+          디지털 변환 결과
+        </button>
+        <button id="tab-analysis-btn" onclick="switchTab('analysis')" disabled class="flex-1 py-3 text-sm font-medium rounded-lg flex items-center justify-center gap-2 transition-colors text-gray-400 cursor-not-allowed">
+          <i data-lucide="bar-chart" class="w-5 h-5"></i>
+          AI 심층 분석
         </button>
       </div>
 
-      <!-- PDF 업로드 완료 표시 영역 (초기엔 숨김) -->
-      <div id="pdf-success-area" class="hidden w-full h-80 flex-col items-center justify-center border-2 border-dashed border-indigo-300 rounded-xl bg-indigo-50 animate-fadeIn">
-        <i data-lucide="file-text" class="w-12 h-12 text-indigo-400 mb-4"></i>
-        <p id="pdf-file-name" class="text-lg font-medium text-indigo-900"></p>
-        <p class="text-sm text-indigo-600 mt-2">PDF 파일이 성공적으로 첨부되었습니다.</p>
-        <button onclick="clearPdf()" class="mt-4 px-4 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition font-medium">
-          삭제하고 직접 입력하기
-        </button>
-      </div>
-
-      <!-- 텍스트 입력 영역 -->
-      <textarea id="input-textarea" placeholder="여기에 수업지도안 내용을 붙여넣으세요..." class="w-full h-80 p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 resize-none font-mono text-sm leading-relaxed outline-none"></textarea>
-
-      <!-- 하단 버튼 영역 -->
-      <div class="mt-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-        <div class="flex items-center gap-4 w-full sm:w-auto">
-          <input type="file" id="file-input" accept=".pdf" class="hidden" onchange="handleFileUpload(event)">
-          <button onclick="document.getElementById('file-input').click()" class="flex items-center gap-2 px-5 py-3 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition w-full sm:w-auto justify-center font-medium">
-            <i data-lucide="upload" class="w-5 h-5"></i>
-            PDF 파일 업로드
+      <!-- Tab Content: Input -->
+      <div id="tab-input" class="tab-content active bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sm:p-8 animate-fadeIn">
+        <div class="mb-6 flex justify-between items-end">
+          <div>
+            <h2 class="text-xl font-bold text-gray-900 mb-2">수업지도안 입력</h2>
+            <p class="text-gray-500">텍스트를 직접 입력하거나 PDF 파일을 업로드하여 AI 분석을 받아보세요.</p>
+          </div>
+          <button onclick="fillDemoData()" class="text-indigo-600 text-sm hover:underline flex items-center gap-1 font-medium">
+            <i data-lucide="play" class="w-4 h-4"></i> 데모 데이터 채우기
           </button>
         </div>
-        
-        <button id="analyze-btn" onclick="analyzePlan()" class="flex items-center gap-2 px-8 py-3 bg-indigo-600 text-white font-medium rounded-xl hover:bg-indigo-700 transition w-full sm:w-auto justify-center shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">
-          <i data-lucide="play" id="btn-icon" class="w-5 h-5"></i>
-          <span id="btn-text">AI 분석 시작하기</span>
-        </button>
-      </div>
 
-      <!-- 에러 메시지 영역 -->
-      <div id="error-message" class="hidden mt-4 p-4 bg-red-50 text-red-600 rounded-xl flex items-center gap-2 animate-fadeIn font-medium">
-        <i data-lucide="alert-circle" class="w-5 h-5"></i>
-        <span id="error-text"></span>
-      </div>
-    </div>
-
-    <!-- Tab Content: Digitized View -->
-    <div id="tab-digitized" class="tab-content space-y-6 animate-fadeIn">
-      <!-- Summary Card -->
-      <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sm:p-8">
-        <h2 class="text-xl font-bold text-gray-900 mb-6 border-b pb-4 flex items-center gap-2">
-          <i data-lucide="target" class="w-6 h-6 text-indigo-600"></i> 기본 정보
-        </h2>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <p class="text-sm text-gray-500 font-medium mb-1">단원 및 과목</p>
-            <p id="res-subject" class="text-lg font-semibold text-gray-900"></p>
-          </div>
-          <div>
-            <p class="text-sm text-gray-500 font-medium mb-1">학습 주제</p>
-            <p id="res-topic" class="text-lg font-semibold text-gray-900"></p>
-          </div>
-          <div class="md:col-span-2 bg-indigo-50 p-4 rounded-xl border border-indigo-100">
-            <p class="text-sm text-indigo-800 font-medium mb-1">학습 목표</p>
-            <p id="res-objective" class="text-indigo-900 font-medium"></p>
-          </div>
-        </div>
-      </div>
-
-      <!-- Phases Timeline -->
-      <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sm:p-8">
-        <h2 class="text-xl font-bold text-gray-900 mb-8 border-b pb-4 flex items-center gap-2">
-          <i data-lucide="clock" class="w-6 h-6 text-indigo-600"></i> 흐름도 (디지털화)
-        </h2>
-        <div id="res-phases" class="relative border-l-2 border-indigo-100 ml-3 md:ml-6 space-y-8 pb-4">
-          <!-- 타임라인이 자바스크립트를 통해 동적으로 생성됩니다. -->
-        </div>
-      </div>
-      
-      <div class="flex justify-end">
-        <button onclick="switchTab('analysis')" class="flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white font-medium rounded-xl hover:bg-indigo-700 transition shadow-sm">
-          AI 분석 결과 보기 <i data-lucide="chevron-right" class="w-5 h-5"></i>
-        </button>
-      </div>
-    </div>
-
-    <!-- Tab Content: Analysis -->
-    <div id="tab-analysis" class="tab-content space-y-6 animate-fadeIn">
-      <!-- Header Card -->
-      <div class="bg-gradient-to-br from-indigo-600 to-purple-700 rounded-2xl shadow-md p-8 text-white">
-        <h2 class="text-2xl font-bold mb-2">AI 교육학적 심층 분석 결과</h2>
-        <p class="text-indigo-100">제공해주신 수업지도안을 바탕으로 교육학적 타당성을 검토하고 개선 아이디어를 도출했습니다.</p>
-      </div>
-
-      <div class="grid grid-cols-1 gap-6">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <!-- Strengths -->
-          <div class="bg-white rounded-2xl shadow-sm border border-green-100 p-6">
-            <h3 class="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-              <div class="p-2 bg-green-100 rounded-lg text-green-600"><i data-lucide="check-circle" class="w-5 h-5"></i></div>
-              수업 설계의 강점
-            </h3>
-            <ul id="res-strengths" class="space-y-3"></ul>
-          </div>
-
-          <!-- Weaknesses -->
-          <div class="bg-white rounded-2xl shadow-sm border border-orange-100 p-6">
-            <h3 class="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-              <div class="p-2 bg-orange-100 rounded-lg text-orange-600"><i data-lucide="alert-circle" class="w-5 h-5"></i></div>
-              보완이 필요한 부분
-            </h3>
-            <ul id="res-weaknesses" class="space-y-3"></ul>
-          </div>
+        <!-- PDF 업로드 완료 표시 영역 (초기엔 숨김) -->
+        <div id="pdf-success-area" class="hidden w-full h-80 flex-col items-center justify-center border-2 border-dashed border-indigo-300 rounded-xl bg-indigo-50 animate-fadeIn">
+          <i data-lucide="file-text" class="w-12 h-12 text-indigo-400 mb-4"></i>
+          <p id="pdf-file-name" class="text-lg font-medium text-indigo-900"></p>
+          <p class="text-sm text-indigo-600 mt-2">PDF 파일이 성공적으로 첨부되었습니다.</p>
+          <button onclick="clearPdf()" class="mt-4 px-4 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition font-medium">
+            삭제하고 직접 입력하기
+          </button>
         </div>
 
-        <!-- Suggestions -->
-        <div class="bg-white rounded-2xl shadow-sm border border-blue-100 p-6">
-          <h3 class="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2 border-b pb-4 border-gray-100">
-            <div class="p-2 bg-blue-100 rounded-lg text-blue-600"><i data-lucide="lightbulb" class="w-5 h-5"></i></div>
-            AI 향상 제안 및 팁
-          </h3>
+        <!-- 텍스트 입력 영역 -->
+        <textarea id="input-textarea" placeholder="여기에 수업지도안 내용을 붙여넣으세요..." class="w-full h-80 p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 resize-none font-mono text-sm leading-relaxed outline-none"></textarea>
+
+        <!-- 하단 버튼 영역 -->
+        <div class="mt-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div class="flex items-center gap-4 w-full sm:w-auto">
+            <input type="file" id="file-input" accept=".pdf" class="hidden" onchange="handleFileUpload(event)">
+            <button onclick="document.getElementById('file-input').click()" class="flex items-center gap-2 px-5 py-3 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition w-full sm:w-auto justify-center font-medium">
+              <i data-lucide="upload" class="w-5 h-5"></i>
+              PDF 파일 업로드
+            </button>
+          </div>
           
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div class="bg-blue-50 p-5 rounded-xl border border-blue-100 hover:shadow-md transition">
-              <h4 class="font-bold text-blue-800 mb-2 flex items-center gap-2">🌱 학생 주도형 수업</h4>
-              <p id="res-s-studentLed" class="text-gray-700 text-sm leading-relaxed"></p>
+          <button id="analyze-btn" onclick="analyzePlan()" class="flex items-center gap-2 px-8 py-3 bg-indigo-600 text-white font-medium rounded-xl hover:bg-indigo-700 transition w-full sm:w-auto justify-center shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">
+            <i data-lucide="play" id="btn-icon" class="w-5 h-5"></i>
+            <span id="btn-text">AI 분석 시작하기</span>
+          </button>
+        </div>
+
+        <!-- 에러 메시지 영역 -->
+        <div id="error-message" class="hidden mt-4 p-4 bg-red-50 text-red-600 rounded-xl flex items-center gap-2 animate-fadeIn font-medium">
+          <i data-lucide="alert-circle" class="w-5 h-5"></i>
+          <span id="error-text"></span>
+        </div>
+      </div>
+
+      <!-- Tab Content: Digitized View -->
+      <div id="tab-digitized" class="tab-content space-y-6 animate-fadeIn">
+        <!-- Summary Card -->
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sm:p-8">
+          <h2 class="text-xl font-bold text-gray-900 mb-6 border-b pb-4 flex items-center gap-2">
+            <i data-lucide="target" class="w-6 h-6 text-indigo-600"></i> 기본 정보
+          </h2>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <p class="text-sm text-gray-500 font-medium mb-1">단원 및 과목</p>
+              <p id="res-subject" class="text-lg font-semibold text-gray-900"></p>
             </div>
-            <div class="bg-indigo-50 p-5 rounded-xl border border-indigo-100 hover:shadow-md transition">
-              <h4 class="font-bold text-indigo-800 mb-2 flex items-center gap-2">🤝 학생 참여형 수업</h4>
-              <p id="res-s-participatory" class="text-gray-700 text-sm leading-relaxed"></p>
+            <div>
+              <p class="text-sm text-gray-500 font-medium mb-1">학습 주제</p>
+              <p id="res-topic" class="text-lg font-semibold text-gray-900"></p>
             </div>
-            <div class="bg-purple-50 p-5 rounded-xl border border-purple-100 hover:shadow-md transition">
-              <h4 class="font-bold text-purple-800 mb-2 flex items-center gap-2">🧠 깊이 있는 학습</h4>
-              <p id="res-s-inDepth" class="text-gray-700 text-sm leading-relaxed"></p>
+            <div class="md:col-span-2 bg-indigo-50 p-4 rounded-xl border border-indigo-100">
+              <p class="text-sm text-indigo-800 font-medium mb-1">학습 목표</p>
+              <p id="res-objective" class="text-indigo-900 font-medium"></p>
             </div>
-            <div class="bg-pink-50 p-5 rounded-xl border border-pink-100 hover:shadow-md transition">
-              <h4 class="font-bold text-pink-800 mb-2 flex items-center gap-2">📝 논술형 평가</h4>
-              <p id="res-s-essay" class="text-gray-700 text-sm leading-relaxed"></p>
+          </div>
+        </div>
+
+        <!-- Phases Timeline -->
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sm:p-8">
+          <h2 class="text-xl font-bold text-gray-900 mb-8 border-b pb-4 flex items-center gap-2">
+            <i data-lucide="clock" class="w-6 h-6 text-indigo-600"></i> 흐름도 (디지털화)
+          </h2>
+          <div id="res-phases" class="relative border-l-2 border-indigo-100 ml-3 md:ml-6 space-y-8 pb-4">
+            <!-- 타임라인이 자바스크립트를 통해 동적으로 생성됩니다. -->
+          </div>
+        </div>
+        
+        <div class="flex justify-end">
+          <button onclick="switchTab('analysis')" class="flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white font-medium rounded-xl hover:bg-indigo-700 transition shadow-sm">
+            AI 분석 결과 보기 <i data-lucide="chevron-right" class="w-5 h-5"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Tab Content: Analysis -->
+      <div id="tab-analysis" class="tab-content space-y-6 animate-fadeIn">
+        <!-- Header Card -->
+        <div class="bg-gradient-to-br from-indigo-600 to-purple-700 rounded-2xl shadow-md p-8 text-white">
+          <h2 class="text-2xl font-bold mb-2">AI 교육학적 심층 분석 결과</h2>
+          <p class="text-indigo-100">제공해주신 수업지도안을 바탕으로 교육학적 타당성을 검토하고 개선 아이디어를 도출했습니다.</p>
+        </div>
+
+        <div class="grid grid-cols-1 gap-6">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Strengths -->
+            <div class="bg-white rounded-2xl shadow-sm border border-green-100 p-6">
+              <h3 class="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                <div class="p-2 bg-green-100 rounded-lg text-green-600"><i data-lucide="check-circle" class="w-5 h-5"></i></div>
+                수업 설계의 강점
+              </h3>
+              <ul id="res-strengths" class="space-y-3"></ul>
             </div>
-            <div class="bg-teal-50 p-5 rounded-xl border border-teal-100 md:col-span-2 hover:shadow-md transition">
-              <h4 class="font-bold text-teal-800 mb-2 flex items-center gap-2">💬 피드백 방안</h4>
-              <p id="res-s-feedback" class="text-gray-700 text-sm leading-relaxed"></p>
+
+            <!-- Weaknesses -->
+            <div class="bg-white rounded-2xl shadow-sm border border-orange-100 p-6">
+              <h3 class="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                <div class="p-2 bg-orange-100 rounded-lg text-orange-600"><i data-lucide="alert-circle" class="w-5 h-5"></i></div>
+                보완이 필요한 부분
+              </h3>
+              <ul id="res-weaknesses" class="space-y-3"></ul>
+            </div>
+          </div>
+
+          <!-- Suggestions -->
+          <div class="bg-white rounded-2xl shadow-sm border border-blue-100 p-6">
+            <h3 class="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2 border-b pb-4 border-gray-100">
+              <div class="p-2 bg-blue-100 rounded-lg text-blue-600"><i data-lucide="lightbulb" class="w-5 h-5"></i></div>
+              AI 향상 제안 및 팁
+            </h3>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div class="bg-blue-50 p-5 rounded-xl border border-blue-100 hover:shadow-md transition">
+                <h4 class="font-bold text-blue-800 mb-2 flex items-center gap-2">🌱 학생 주도형 수업</h4>
+                <p id="res-s-studentLed" class="text-gray-700 text-sm leading-relaxed"></p>
+              </div>
+              <div class="bg-indigo-50 p-5 rounded-xl border border-indigo-100 hover:shadow-md transition">
+                <h4 class="font-bold text-indigo-800 mb-2 flex items-center gap-2">🤝 학생 참여형 수업</h4>
+                <p id="res-s-participatory" class="text-gray-700 text-sm leading-relaxed"></p>
+              </div>
+              <div class="bg-purple-50 p-5 rounded-xl border border-purple-100 hover:shadow-md transition">
+                <h4 class="font-bold text-purple-800 mb-2 flex items-center gap-2">🧠 깊이 있는 학습</h4>
+                <p id="res-s-inDepth" class="text-gray-700 text-sm leading-relaxed"></p>
+              </div>
+              <div class="bg-pink-50 p-5 rounded-xl border border-pink-100 hover:shadow-md transition">
+                <h4 class="font-bold text-pink-800 mb-2 flex items-center gap-2">📝 논술형 평가</h4>
+                <p id="res-s-essay" class="text-gray-700 text-sm leading-relaxed"></p>
+              </div>
+              <div class="bg-teal-50 p-5 rounded-xl border border-teal-100 md:col-span-2 hover:shadow-md transition">
+                <h4 class="font-bold text-teal-800 mb-2 flex items-center gap-2">💬 피드백 방안</h4>
+                <p id="res-s-feedback" class="text-gray-700 text-sm leading-relaxed"></p>
+              </div>
             </div>
           </div>
         </div>
@@ -224,12 +244,35 @@
     lucide.createIcons();
 
     // --- 전역 변수 설정 ---
-    // 실제 사용 시 여기에 본인의 Gemini API 키를 문자열로 입력해야 동작합니다.
-    const API_KEY = "API_키를_여기에_입력하세요"; 
-    
+    let userApiKey = ''; // 사용자가 입력한 키를 저장
     let currentPdfBase64 = '';
     let isAnalyzingData = false;
     let analysisResultData = null;
+
+    // --- 키 저장 및 화면 전환 로직 ---
+    function saveApiKey() {
+      const inputEl = document.getElementById('api-key-input');
+      const errorEl = document.getElementById('api-key-error');
+      
+      if (!inputEl.value.trim()) {
+        errorEl.classList.remove('hidden');
+        return;
+      }
+      
+      userApiKey = inputEl.value.trim();
+      errorEl.classList.add('hidden');
+      
+      // 키 입력창 숨기고 메인 컨텐츠 표시
+      document.getElementById('api-key-section').style.display = 'none';
+      document.getElementById('main-content').classList.remove('hidden');
+    }
+
+    // 엔터키로 키 입력 완료 지원
+    document.getElementById('api-key-input').addEventListener('keypress', function (e) {
+      if (e.key === 'Enter') {
+        saveApiKey();
+      }
+    });
 
     // --- UI 조작 함수 ---
     function showError(msg) {
@@ -271,19 +314,15 @@
 
     // --- 탭 전환 함수 ---
     function switchTab(tabId) {
-      // 모든 탭 숨기기
       document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-      // 선택한 탭 보이기
       document.getElementById(`tab-${tabId}`).classList.add('active');
 
-      // 버튼 스타일 업데이트
       const btnIds = ['input', 'digitized', 'analysis'];
       btnIds.forEach(id => {
         const btn = document.getElementById(`tab-${id}-btn`);
         if (id === tabId) {
           btn.className = `flex-1 py-3 text-sm font-medium rounded-lg flex items-center justify-center gap-2 transition-colors bg-white shadow text-indigo-700`;
         } else {
-          // 비활성화 상태 유지 확인
           if(btn.disabled) {
             btn.className = `flex-1 py-3 text-sm font-medium rounded-lg flex items-center justify-center gap-2 transition-colors text-gray-400 cursor-not-allowed`;
           } else {
@@ -350,10 +389,8 @@
       const reader = new FileReader();
       
       reader.onload = (e) => {
-        // Base64 추출 (Data URL에서 "data:application/pdf;base64," 뒷부분만)
         currentPdfBase64 = e.target.result.split(',')[1];
         
-        // UI 변경 (텍스트창 숨기고 성공박스 보이기)
         document.getElementById('input-textarea').classList.add('hidden');
         document.getElementById('input-textarea').value = '';
         
@@ -373,7 +410,6 @@
       currentPdfBase64 = '';
       document.getElementById('file-input').value = '';
       
-      // UI 복구
       document.getElementById('pdf-success-area').classList.add('hidden');
       document.getElementById('pdf-success-area').classList.remove('flex');
       
@@ -391,8 +427,8 @@
         return;
       }
 
-      if (API_KEY === "API_키를_여기에_입력하세요" || !API_KEY) {
-        showError('HTML 소스 코드 내에 API_KEY가 설정되지 않았습니다. 코드를 열어 키를 입력해주세요.');
+      if (!userApiKey) {
+        showError('API 키가 입력되지 않았습니다. 새로고침 후 다시 입력해주세요.');
         return;
       }
 
@@ -445,7 +481,7 @@
       while (attempt < maxRetries) {
         try {
           const response = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${API_KEY}`,
+            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${userApiKey}`,
             {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
@@ -469,22 +505,20 @@
 
           analysisResultData = JSON.parse(responseText);
           
-          // 결과 화면 렌더링
           renderResults(analysisResultData);
           enableResultTabs();
-          switchTab('digitized'); // 성공 시 탭 이동
+          switchTab('digitized');
           
           setAnalyzeBtnState(false);
-          return; // 성공 시 종료
+          return;
 
         } catch (err) {
           attempt++;
           console.error(`Attempt ${attempt} failed:`, err);
           if (attempt >= maxRetries) {
-            showError(`분석 실패: ${err.message}. 잠시 후 다시 시도하거나 입력 내용을 줄여보세요.`);
+            showError(`분석 실패: ${err.message}`);
             setAnalyzeBtnState(false);
           } else {
-            // 지수 백오프 대기
             await new Promise(r => setTimeout(r, 1000 * attempt));
           }
         }
@@ -495,14 +529,12 @@
     function renderResults(data) {
       if(!data) return;
 
-      // 1. 기본 정보 렌더링
       document.getElementById('res-subject').textContent = data.summary.subject;
       document.getElementById('res-topic').textContent = data.summary.topic;
       document.getElementById('res-objective').textContent = data.summary.objective;
 
-      // 2. 흐름도(Phases) 렌더링
       const phasesContainer = document.getElementById('res-phases');
-      phasesContainer.innerHTML = ''; // 초기화
+      phasesContainer.innerHTML = '';
       
       data.phases.forEach(phase => {
         const phaseHtml = `
@@ -531,7 +563,6 @@
         phasesContainer.insertAdjacentHTML('beforeend', phaseHtml);
       });
 
-      // 3. 분석 결과(Analysis) 렌더링
       const renderList = (id, items, color) => {
         const ul = document.getElementById(id);
         ul.innerHTML = '';
@@ -548,14 +579,12 @@
       renderList('res-strengths', data.analysis.strengths, 'green');
       renderList('res-weaknesses', data.analysis.weaknesses, 'orange');
 
-      // 4. 세부 제안 렌더링
       document.getElementById('res-s-studentLed').textContent = data.analysis.suggestions.studentLed;
       document.getElementById('res-s-participatory').textContent = data.analysis.suggestions.studentParticipatory;
       document.getElementById('res-s-inDepth').textContent = data.analysis.suggestions.inDepth;
       document.getElementById('res-s-essay').textContent = data.analysis.suggestions.essayAssessment;
       document.getElementById('res-s-feedback').textContent = data.analysis.suggestions.feedback;
 
-      // 동적으로 추가된 아이콘 렌더링
       lucide.createIcons();
     }
   </script>
